@@ -42,7 +42,8 @@
 # |                                            |         |     files in /etc/cray/ims shared          |
 # |                                            |         |     volume (see $SSHD_OPTIONS)             |
 # |                                            |         |  6. Wait for user to touch  <----------------+ User touches SIGNAL_FILE_COMPLETE file
-# |                                            |         |     $SIGNAL_FILE_COMPLETE                  |
+# |                                            |         |     $SIGNAL_FILE_COMPLETE or               |
+# |                                            |         |     $SIGNAL_FILE_FAILED                    |
 # |                                            |         |  7. Start orderly shutdown of SSH          |
 # |                                            |         |     Container                              |
 # |                                            |         |     a) Remove SIGNAL_FILE_COMPLETE file    |
@@ -60,35 +61,51 @@ IMAGE_ROOT_PARENT=${1:-/mnt/image}
 SIGNAL_FILE_READY=$IMAGE_ROOT_PARENT/ready
 SIGNAL_FILE_COMPLETE=$IMAGE_ROOT_PARENT/complete
 SIGNAL_FILE_EXITING=$IMAGE_ROOT_PARENT/exiting
+SIGNAL_FILE_FAILED=$IMAGE_ROOT_PARENT/failed
 
 PARAMETER_FILE_BUILD_FAILED=$IMAGE_ROOT_PARENT/build_failed
 
 function wait_for_ready {
     echo "Waiting for $SIGNAL_FILE_READY flag"
-    until [ -f $SIGNAL_FILE_READY ]
+    until [ -f "$SIGNAL_FILE_READY" ]
     do
-        echo "Waiting for $SIGNAL_FILE_READY to exist before starting build environment" `date`
+        echo "Waiting for $SIGNAL_FILE_READY to exist before starting ssh environment $(date)"
         sleep 5;
     done
 }
 
 function wait_for_complete {
-    echo "Waiting for User to touch $SIGNAL_FILE_COMPLETE flag"
-    until [ -f $SIGNAL_FILE_COMPLETE ]
+
+    echo "To mark this shell as successful, touch the file \"$SIGNAL_FILE_COMPLETE\"."
+    echo "To mark this shell as failed, touch the file \"$SIGNAL_FILE_FAILED\"."
+    echo "Waiting for User to mark this shell as either successful or failed."
+    until [ -f "$SIGNAL_FILE_COMPLETE" ] || [ -f "$SIGNAL_FILE_FAILED" ]
     do
         sleep 5;
     done
-    echo "$SIGNAL_FILE_COMPLETE exists; exiting build environment"
 
-    # Remove the complete file now that we're done
-    echo "Removing $SIGNAL_FILE_COMPLETE"
-    rm $SIGNAL_FILE_COMPLETE
+    if [ -f "$SIGNAL_FILE_FAILED" ]
+    then
+        echo "$SIGNAL_FILE_FAILED exists; Shell was marked failed."
+    elif [ -f "$SIGNAL_FILE_COMPLETE" ]
+    then
+        echo "$SIGNAL_FILE_COMPLETE exists; Shell was marked successful."
+    fi
+
+    if [ -f "$SIGNAL_FILE_COMPLETE" ]
+    then
+        # Remove the complete file now that we're done
+        echo "Removing $SIGNAL_FILE_COMPLETE"
+        rm "$SIGNAL_FILE_COMPLETE"
+    fi
+
+    echo "Exiting ssh environment"
 }
 
 function signal_exiting {
     # Let the buildenv-sidecar container know that we're exiting
     echo "Touching $SIGNAL_FILE_EXITING flag"
-    touch $SIGNAL_FILE_EXITING
+    touch "$SIGNAL_FILE_EXITING"
 }
 
 function run_user_shell {
@@ -98,10 +115,11 @@ function run_user_shell {
     # Setup SSH jail
     if [ "$SSH_JAIL" = "True" ]
     then
-        chmod 755 $IMAGE_ROOT_PARENT
-        echo "Match User root" >> $SSHD_CONFIG_FILE
-        echo "ChrootDirectory $IMAGE_ROOT_PARENT/image-root" >> $SSHD_CONFIG_FILE
+        chmod 755 "$IMAGE_ROOT_PARENT"
+        echo "Match User root" >> "$SSHD_CONFIG_FILE"
+        echo "ChrootDirectory $IMAGE_ROOT_PARENT/image-root" >> "$SSHD_CONFIG_FILE"
         SIGNAL_FILE_COMPLETE=$IMAGE_ROOT_PARENT/image-root/tmp/complete
+        SIGNAL_FILE_FAILED=$IMAGE_ROOT_PARENT/image-root/tmp/failed
     fi
 
     # Start the SSH server daemon
@@ -125,8 +143,8 @@ function run_user_shell {
 function should_run_user_shell {
     case "$IMS_ACTION" in
         create)
-            if [ -f $PARAMETER_FILE_BUILD_FAILED ]; then
-                if [[ `echo $ENABLE_DEBUG | tr [:upper:] [:lower:]` = "true" ]]; then
+            if [ -f "$PARAMETER_FILE_BUILD_FAILED" ]; then
+                if [[ $(echo "$ENABLE_DEBUG" | tr [:upper:] [:lower:]) = "true" ]]; then
                     echo "Running user shell for failed create action"
                     return 0
                 else
