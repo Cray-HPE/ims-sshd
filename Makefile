@@ -20,7 +20,7 @@
 #
 # (MIT License)
 
-NAME ?= csm-config
+NAME ?= cray-ims-sshd
 export VERSION ?= $(shell cat .version)-local
 export DOCKER_IMAGE ?= ${NAME}:${VERSION}
 
