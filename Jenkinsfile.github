@@ -11,7 +11,7 @@ pipeline {
     }
 
     environment {
-        NAME = "ims-sshd"
+        NAME = "cray-ims-sshd"
         DESCRIPTION = "Cray image management service SSH container"
         IS_STABLE = getBuildIsStable()
         VERSION = getDockerBuildVersion(isStable: env.IS_STABLE)
