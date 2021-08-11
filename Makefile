@@ -21,14 +21,16 @@
 # (MIT License)
 
 NAME ?= cray-ims-sshd
-export VERSION ?= $(shell cat .version)-local
-export DOCKER_IMAGE ?= ${NAME}:${VERSION}
+DOCKER_VERSION ?= $(shell head -1 .docker_version)
 
-all: lint image
+all: runbuildprep lint image
+
+runbuildprep:
+		./cms_meta_tools/scripts/runBuildPrep.sh
 
 lint:
-		./runLint.sh
+		./cms_meta_tools/scripts/runLint.sh
 
 image:
-		docker build --pull ${DOCKER_ARGS} --tag '${NAME}:${VERSION}' .
+		docker build --pull ${DOCKER_ARGS} --tag '${NAME}:${DOCKER_VERSION}' .
 
