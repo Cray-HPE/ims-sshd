@@ -87,6 +87,14 @@ image customization workflow.
 Development on this repository should follow the standard CMS development
 [process](https://connect.us.cray.com/confluence/x/fFGfBQ).
 
+## Build Helpers
+This repo uses some build helper scripts from the 
+[cms-meta-tools](https://github.com/Cray-HPE/cms-meta-tools) repo. See that repo for more details.
+
+## Local Builds
+If you wish to perform a local build, you will first need to clone or copy the contents of the
+cms-meta-tools repo to `./cms_meta_tools` in the same directory as the `Makefile`.
+
 ### Versioning
 We use [SemVer](http://semver.org/) for versioning. See the `.version` file in
 the repository root for the current version. Please update that version when
