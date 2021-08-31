@@ -22,6 +22,12 @@
 # (MIT License)
 FROM arti.dev.cray.com/baseos-docker-master-local/opensuse-leap:15.2 as base
 RUN zypper install -y openssh
+
+# Apply security patches
+RUN zypper refresh
+RUN zypper patch -y --with-update --with-optional
+RUN zypper clean
+
 COPY run_script.sh entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
 ENV SSHD_OPTIONS ""
