@@ -78,8 +78,8 @@ Successfully tagged ims-sshd:latest
 ## Deployment
 This image is usually deployed by the IMS due to the complexity of managing
 all of the components that make up an image customization environment. See the
-[IMS](https://stash.us.cray.com/projects/SCMS/repos/ims/browse) repository and
-the [IMS Utilities](https://stash.us.cray.com/projects/SCMS/repos/ims-utils/browse)
+[IMS](https://github.com/Cray-HPE/ims) repository and
+the [IMS Utilities](https://github.com/Cray-HPE/ims-utils)
 repository for more information about how the build environment fits in the
 image customization workflow.
 
