@@ -13,6 +13,16 @@ build environment so the image root can be modified externally.
 This build environment can be used as a model for other build environments
 that can be used by IMS.
 
+# Container Runs as Root
+
+The SSHD container runs the sshd command to enable access to the image being 
+built/customized. As part of the setup of sshd, container level sshd keys need 
+to be created and written to /etc. 
+
+There is future work that will hopefully mitigate any concern regarding this container 
+running as root. However, until this work is completed, the container will need to run
+as root.
+
 ## Getting Started
 
 ### Image Build Prerequisites
