@@ -124,6 +124,7 @@ function run_user_shell {
 
     # Start the SSH server daemon
     ssh-keygen -A
+    chown -R root:root /etc/cray/ims
     /usr/sbin/sshd $SSHD_OPTIONS
 
     # Perform any other bootstrapping tasks here or run a script
