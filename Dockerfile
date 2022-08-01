@@ -22,7 +22,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 # Dockerfile for IMS sshd environment
-FROM arti.dev.cray.com/baseos-docker-master-local/opensuse-leap:15.2 as base
+FROM arti.hpc.amslabs.hpecorp.net/baseos-docker-master-local/opensuse-leap:15.2 as base
 RUN zypper install -y openssh
 
 # Apply security patches
