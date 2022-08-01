@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2018-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,16 +21,31 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# Dockerfile for IMS sshd environment
-FROM arti.hpc.amslabs.hpecorp.net/baseos-docker-master-local/opensuse-leap:15.2 as base
-RUN zypper install -y openssh
+name: Gitflow Merge Back
+on:
+  pull_request:
+    types: [ closed ]
+    branches: [ master ]
 
-# Apply security patches
-COPY zypper-refresh-patch-clean.sh /
-RUN /zypper-refresh-patch-clean.sh && rm /zypper-refresh-patch-clean.sh
+jobs:
+  merge-to-develop:
+    # this job will only run if the PR has been merged, not just closed
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
 
-COPY run_script.sh entrypoint.sh /
-ENTRYPOINT ["/entrypoint.sh"]
-ENV SSHD_OPTIONS ""
-ENV IMAGE_ROOT_PARENT /mnt/image
-ENV CUSTOMIZATION_SCRIPT /run_script.sh
+      - name: Create the gitflow mergeback PR
+        uses: Cray-HPE/.github/actions/csm-gitflow-mergeback@v1-csm-gitflow-mergeback
+        id: create-pr
+        with:
+          source-branch: master
+          base-branch: develop
+          automerge: true
+          app-key: ${{ secrets.CSM_GITFLOW_MERGEBACK_BOT_APP_KEY }}
+          app-id: ${{ secrets.CSM_GITFLOW_MERGEBACK_BOT_APP_ID }}
+
+      - name: Generated Pull Request Info
+        shell: bash
+        run: |
+          echo "Pull Request Number - ${{ steps.create-pr.outputs.pr-number }}"
+          echo "Pull Request URL - ${{ steps.create-pr.outputs.pr-url }}"

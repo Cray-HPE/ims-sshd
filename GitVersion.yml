@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2018-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019, 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,16 +21,34 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# Dockerfile for IMS sshd environment
-FROM arti.hpc.amslabs.hpecorp.net/baseos-docker-master-local/opensuse-leap:15.2 as base
-RUN zypper install -y openssh
-
-# Apply security patches
-COPY zypper-refresh-patch-clean.sh /
-RUN /zypper-refresh-patch-clean.sh && rm /zypper-refresh-patch-clean.sh
-
-COPY run_script.sh entrypoint.sh /
-ENTRYPOINT ["/entrypoint.sh"]
-ENV SSHD_OPTIONS ""
-ENV IMAGE_ROOT_PARENT /mnt/image
-ENV CUSTOMIZATION_SCRIPT /run_script.sh
+# Gitflow Configuration for this repository
+mode: ContinuousDeployment
+branches:
+  main:
+    regex: ^master$|^main$
+    mode: ContinuousDelivery
+    tag: rc
+  develop:
+    regex: ^develop$
+    increment: Minor           ## The NEXT release will be 1.2.0 if the latest production release is 1.1.x
+    mode: ContinuousDeployment
+  release:
+    # Do not consider legacy release/[shasta,csm]-* branches as gitflow release branches
+    regex: ^release\/[\d.]+
+    mode: ContinuousDelivery
+  feature:
+    regex: ^features?[/-]
+    mode: ContinuousDelivery
+  pull-request:
+    regex: ^(pull|pull\-requests|pr)[/-]
+    mode: ContinuousDelivery
+  hotfix:
+    regex: ^hotfix(es)?[/-]
+    tag: hotfix
+    mode: ContinuousDelivery
+  support:
+    regex: ^support[/-]
+    mode: ContinuousDelivery
+ignore:
+  sha: []
+merge-message-formats: {}
