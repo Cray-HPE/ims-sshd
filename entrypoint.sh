@@ -117,6 +117,8 @@ function run_user_shell {
     if [ "$SSH_JAIL" = "True" ]
     then
         chmod 755 "$IMAGE_ROOT_PARENT"
+        chown root:root "$IMAGE_ROOT_PARENT"
+        chown root:root "$IMAGE_ROOT_PARENT/image-root"
         echo "Match User root" >> "$SSHD_CONFIG_FILE"
         echo "ChrootDirectory $IMAGE_ROOT_PARENT/image-root" >> "$SSHD_CONFIG_FILE"
         SIGNAL_FILE_COMPLETE=$IMAGE_ROOT_PARENT/image-root/tmp/complete
