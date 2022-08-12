@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.1] - 2022-08-12
+### Changed 
+- CASMTRIAGE-3913 - fix the directory permissions if the incomming image has incorrect ownership.
+
 ## [1.6.0] - 2022-08-01
 ### Changed
 - CASMCMS-7970 - update dev.cray.com server addresses.
