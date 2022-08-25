@@ -6,10 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- Spelling corrections.
 
 ## [1.6.1] - 2022-08-12
 ### Changed 
-- CASMTRIAGE-3913 - fix the directory permissions if the incomming image has incorrect ownership.
+- CASMTRIAGE-3913 - fix the directory permissions if the incoming image has incorrect ownership.
 
 ## [1.6.0] - 2022-08-01
 ### Changed
