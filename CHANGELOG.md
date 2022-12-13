@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 - Spelling corrections.
+- Added volume mounts when dkms is enabled.
 
 ## [1.6.1] - 2022-08-12
 ### Changed 
