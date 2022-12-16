@@ -125,6 +125,30 @@ function run_user_shell {
         SIGNAL_FILE_FAILED=$IMAGE_ROOT_PARENT/image-root/tmp/failed
     fi
 
+    # If setting up for dkms permissions, do that now
+    echo "JOB_ENABLE_DMKS: $JOB_ENABLE_DKMS"
+    local is_dkms=$(echo $JOB_ENABLE_DKMS | tr '[:upper:]' '[:lower:]')
+    echo "is_dkms=$is_dkms"
+    if [ "$is_dkms" = "true" ]; then
+        if mount -t sysfs /sysfs /mnt/image/image-root/sys; then
+            echo "Mounted /sys"
+        else
+            echo "Failed to mount /sys"
+        fi
+        if mount -t proc /proc /mnt/image/image-root/proc; then
+            echo "Mounted /proc"
+        else
+            echo "Failed to mount /proc"
+        fi
+        if mount -t devtmpfs /devtmpfs /mnt/image/image-root/dev; then
+            echo "Mounted /dev"
+        else
+            echo "Failed to mount /dev"
+        fi
+    else
+        echo "DKMS not enabled"
+    fi
+
     # Start the SSH server daemon
     ssh-keygen -A
     chown -R root:root /etc/cray/ims
