@@ -23,12 +23,19 @@
 #
 
 # Dockerfile for IMS sshd environment
-FROM artifactory.algol60.net/csm-docker/stable/docker.io/opensuse/leap:15.4 as base
-RUN zypper install -y openssh
+# NOTE - currently the algol version does not have arm64 platform - update this when it does
+#FROM artifactory.algol60.net/csm-docker/stable/docker.io/opensuse/leap:15.4 as base
+FROM opensuse/leap:15.4 as base
+
+RUN zypper install -y openssh wget
 
 # Apply security patches
 COPY zypper-refresh-patch-clean.sh /
 RUN /zypper-refresh-patch-clean.sh && rm /zypper-refresh-patch-clean.sh
+
+# Install qemu-aarch64-static binary to handle arm64 emulation if needed
+RUN wget https://github.com/multiarch/qemu-user-static/releases/download/v7.2.0-1/qemu-aarch64-static && \
+    mv ./qemu-aarch64-static /usr/bin/qemu-aarch64-static && chmod +x /usr/bin/qemu-aarch64-static
 
 COPY run_script.sh entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]

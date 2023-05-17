@@ -87,7 +87,7 @@ pipeline {
                 DOCKER_VERSION = sh(returnStdout: true, script: "head -1 .docker_version").trim()
             }
             steps {
-                publishCsmDockerImage(image: env.NAME, tag: env.DOCKER_VERSION, isStable: env.IS_STABLE, multiArch: true)
+                publishCsmDockerImage(image: env.NAME, tag: env.DOCKER_VERSION, isStable: env.IS_STABLE)
             }
         }
     }

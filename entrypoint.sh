@@ -149,6 +149,37 @@ function run_user_shell {
         echo "DKMS not enabled"
     fi
 
+    # If setting up for arm64 emulation, do that now
+    echo "Checking build architecture: $BUILD_ARCH"
+    if [ "$BUILD_ARCH" == "aarch64" ]; then
+        echo "Build architecture is aarch64"
+        # Regiser qemu-aarch64-static to act as an arm interpreter for arm builds 
+        if [ ! -d /proc/sys/fs/binfmt_misc ] ; then
+            echo "- binfmt_misc does not appear to be loaded or isn't built in."
+            echo "  Trying to load it..."
+            if ! modprobe binfmt_misc ; then
+                echo "FATAL: Unable to load binfmt_misc"
+                exit 1;
+            fi
+        fi
+
+        # mount the emulation filesystem
+        if [ ! -f /proc/sys/fs/binfmt_misc/register ] ; then
+            echo "- The binfmt_misc filesystem does not appear to be mounted."
+            echo "  Trying to mount it..."
+            if ! mount binfmt_misc -t binfmt_misc /proc/sys/fs/binfmt_misc ; then
+                echo "FATAL:  Unable to mount binfmt_misc filesystem."
+                exit 1
+            fi
+        fi
+
+        # register qemu for aarch64 images 
+        if [ ! -f /proc/sys/fs/binfmt_misc/qemu-aarch64 ] ; then
+            echo "- Setting up QEMU for ARM64"
+            echo ":qemu-aarch64:M::\x7f\x45\x4c\x46\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\xb7\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/usr/bin/qemu-aarch64-static:F" >> /proc/sys/fs/binfmt_misc/register
+        fi
+    fi
+
     # Start the SSH server daemon
     ssh-keygen -A
     chown -R root:root /etc/cray/ims
