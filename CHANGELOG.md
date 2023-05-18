@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - CASMCMS-8366 - add support for arm64 docker versions
+- CASMCMS-8567 - add support for arm64 image customization
 
 ### Removed
 - Removed defunct files leftover from previous versioning system
