@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.1] - 2023-06-22
+### Added
+- CASMCMS-8658 - add env vars with IMS job options to ssh env
+
 ## [1.8.0] - 2023-05-18
 ### Added
 - CASMCMS-8366 - add support for arm64 docker versions

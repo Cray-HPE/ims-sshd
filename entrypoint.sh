@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2018-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2018-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -179,6 +179,16 @@ function run_user_shell {
             echo ":qemu-aarch64:M::\x7f\x45\x4c\x46\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\xb7\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/usr/bin/qemu-aarch64-static:F" >> /proc/sys/fs/binfmt_misc/register
         fi
     fi
+
+    ## Set up the env vars we want to make available to users
+    # Add vars to a script file
+    echo "export IMS_JOB_ID=$IMS_JOB_ID" >> "$ENV_SCRIPT"
+    echo "export IMS_ARCH=$BUILD_ARCH" >> "$ENV_SCRIPT"
+    echo "export IMS_DKMS_ENABLED=$JOB_ENABLE_DKMS" >> "$ENV_SCRIPT"
+    echo "exec bash -il" >> "$ENV_SCRIPT" # gives user an executable shell to use
+
+    # Force that script to be run on login from ssh
+    echo "ForceCommand $ENV_SCRIPT" >> "$SSHD_CONFIG_FILE"
 
     # Start the SSH server daemon
     ssh-keygen -A
