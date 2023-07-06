@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.2] - 2023-07-06
+### Changed
+- CASMCMS-8704 - fix env vars added to jailed env.
+
 ## [1.8.1] - 2023-06-22
 ### Added
 - CASMCMS-8658 - add env vars with IMS job options to ssh env
