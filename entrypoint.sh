@@ -104,6 +104,13 @@ function wait_for_complete {
 }
 
 function signal_exiting {
+    # clean up env ars script if needed
+    if [ "$SSH_JAIL" = "True" ]
+    then
+        echo "Removing env var file $IMAGE_ROOT_PARENT/image-root/${ENV_SCRIPT#/}"
+        rm "$IMAGE_ROOT_PARENT/image-root/${ENV_SCRIPT#/}"
+    fi
+
     # Let the buildenv-sidecar container know that we're exiting
     echo "Touching $SIGNAL_FILE_EXITING flag"
     touch "$SIGNAL_FILE_EXITING"
@@ -185,10 +192,23 @@ function run_user_shell {
     echo "export IMS_JOB_ID=$IMS_JOB_ID" >> "$ENV_SCRIPT"
     echo "export IMS_ARCH=$BUILD_ARCH" >> "$ENV_SCRIPT"
     echo "export IMS_DKMS_ENABLED=$JOB_ENABLE_DKMS" >> "$ENV_SCRIPT"
-    echo "exec bash -il" >> "$ENV_SCRIPT" # gives user an executable shell to use
+
+    # different route for providing an interactive shell vs executing a command via ssh
+    echo 'if [[ -z "$SSH_ORIGINAL_COMMAND" ]]; then' >> "$ENV_SCRIPT"
+    echo '    exec bash -il' >> "$ENV_SCRIPT"
+    echo 'else' >> "$ENV_SCRIPT"
+    echo '    eval $SSH_ORIGINAL_COMMAND' >> "$ENV_SCRIPT"
+    echo 'fi' >> "$ENV_SCRIPT"
 
     # Force that script to be run on login from ssh
     echo "ForceCommand $ENV_SCRIPT" >> "$SSHD_CONFIG_FILE"
+
+    # If this is a jailed env, env vars script needs to be copied to image root
+    if [ "$SSH_JAIL" = "True" ]
+    then
+        echo "Copying env var script to: $IMAGE_ROOT_PARENT/image-root/${ENV_SCRIPT#/}"
+        cp "$ENV_SCRIPT" "$IMAGE_ROOT_PARENT/image-root/${ENV_SCRIPT#/}"
+    fi
 
     # Start the SSH server daemon
     ssh-keygen -A
