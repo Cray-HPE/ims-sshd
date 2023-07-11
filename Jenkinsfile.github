@@ -78,7 +78,10 @@ pipeline {
                 DOCKER_ARGS = getDockerBuildArgs(name: env.NAME, description: env.DESCRIPTION, version: env.DOCKER_VERSION)
             }
             steps {
-                sh "make image"
+                withCredentials([usernamePassword(credentialsId: 'artifactory-algol60-publish', passwordVariable: 'ARTIFACTORY_PASSWORD', usernameVariable: 'ARTIFACTORY_USERNAME')]) {
+                    sh "echo \$ARTIFACTORY_PASSWORD | docker login artifactory.algol60.net --username \$ARTIFACTORY_USERNAME --password-stdin"
+                    sh "make image"
+                }
             }
         }
 
@@ -87,7 +90,7 @@ pipeline {
                 DOCKER_VERSION = sh(returnStdout: true, script: "head -1 .docker_version").trim()
             }
             steps {
-                publishCsmDockerImage(image: env.NAME, tag: env.DOCKER_VERSION, isStable: env.IS_STABLE)
+                publishCsmDockerImage(image: env.NAME, tag: env.DOCKER_VERSION, isStable: env.IS_STABLE, push: false)
             }
         }
     }
