@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.3] - 2023-07-11
+### Changed
+- CASMCMS-8708 - fix build to include metadata needed for nightly rebuilds.
+
 ## [1.8.2] - 2023-07-06
 ### Changed
 - CASMCMS-8704 - fix env vars added to jailed env.
