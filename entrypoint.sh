@@ -202,6 +202,7 @@ function run_user_shell {
 
     # Force that script to be run on login from ssh
     echo "ForceCommand $ENV_SCRIPT" >> "$SSHD_CONFIG_FILE"
+## TODO - use this for forwarding commands to remote docker
 
     # If this is a jailed env, env vars script needs to be copied to image root
     if [ "$SSH_JAIL" = "True" ]
