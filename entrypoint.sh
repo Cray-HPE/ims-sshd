@@ -118,7 +118,12 @@ function run_user_shell {
     # NOTE:
     #  - all env vars must be on one line
     #  - this must be before the 'Match' line in a jailed setup
-    echo "SetEnv IMS_JOB_ID=$IMS_JOB_ID IMS_ARCH=$BUILD_ARCH IMS_DKMS_ENABLED=$JOB_ENABLE_DKMS" >> "$SSHD_CONFIG_FILE"
+    echo "SetEnv IMS_JOB_ID=$IMS_JOB_ID IMS_ARCH=$BUILD_ARCH IMS_DKMS_ENABLED=$JOB_ENABLE_DKMS REMOTE_BUILD_NODE=$REMOTE_BUILD_NODE" >> "$SSHD_CONFIG_FILE"
+
+    # Set up forwarding to remote node if needed
+    if [[ -n "${REMOTE_BUILD_NODE}" ]]; then
+        echo "ForceCommand /force_script.sh" >> "$SSHD_CONFIG_FILE"
+    fi
 
     # Setup SSH jail
     if [ "$SSH_JAIL" = "True" ]
