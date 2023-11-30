@@ -104,13 +104,6 @@ function wait_for_complete {
 }
 
 function signal_exiting {
-    # clean up env ars script if needed
-    if [ "$SSH_JAIL" = "True" ]
-    then
-        echo "Removing env var file $IMAGE_ROOT_PARENT/image-root/${ENV_SCRIPT#/}"
-        rm "$IMAGE_ROOT_PARENT/image-root/${ENV_SCRIPT#/}"
-    fi
-
     # Let the buildenv-sidecar container know that we're exiting
     echo "Touching $SIGNAL_FILE_EXITING flag"
     touch "$SIGNAL_FILE_EXITING"
@@ -119,6 +112,13 @@ function signal_exiting {
 function run_user_shell {
     # Wait for the ready file to be available
     wait_for_ready
+
+    ## Set up the env vars we want to make available to users
+    # Add vars to a script file - NOTE: must all be on one line
+    # NOTE:
+    #  - all env vars must be on one line
+    #  - this must be before the 'Match' line in a jailed setup
+    echo "SetEnv IMS_JOB_ID=$IMS_JOB_ID IMS_ARCH=$BUILD_ARCH IMS_DKMS_ENABLED=$JOB_ENABLE_DKMS" >> "$SSHD_CONFIG_FILE"
 
     # Setup SSH jail
     if [ "$SSH_JAIL" = "True" ]
@@ -185,29 +185,6 @@ function run_user_shell {
             echo "- Setting up QEMU for ARM64"
             echo ":qemu-aarch64:M::\x7f\x45\x4c\x46\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\xb7\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/usr/bin/qemu-aarch64-static:F" >> /proc/sys/fs/binfmt_misc/register
         fi
-    fi
-
-    ## Set up the env vars we want to make available to users
-    # Add vars to a script file
-    echo "export IMS_JOB_ID=$IMS_JOB_ID" >> "$ENV_SCRIPT"
-    echo "export IMS_ARCH=$BUILD_ARCH" >> "$ENV_SCRIPT"
-    echo "export IMS_DKMS_ENABLED=$JOB_ENABLE_DKMS" >> "$ENV_SCRIPT"
-
-    # different route for providing an interactive shell vs executing a command via ssh
-    echo 'if [[ -z "$SSH_ORIGINAL_COMMAND" ]]; then' >> "$ENV_SCRIPT"
-    echo '    exec bash -il' >> "$ENV_SCRIPT"
-    echo 'else' >> "$ENV_SCRIPT"
-    echo '    eval $SSH_ORIGINAL_COMMAND' >> "$ENV_SCRIPT"
-    echo 'fi' >> "$ENV_SCRIPT"
-
-    # Force that script to be run on login from ssh
-    echo "ForceCommand $ENV_SCRIPT" >> "$SSHD_CONFIG_FILE"
-
-    # If this is a jailed env, env vars script needs to be copied to image root
-    if [ "$SSH_JAIL" = "True" ]
-    then
-        echo "Copying env var script to: $IMAGE_ROOT_PARENT/image-root/${ENV_SCRIPT#/}"
-        cp "$ENV_SCRIPT" "$IMAGE_ROOT_PARENT/image-root/${ENV_SCRIPT#/}"
     fi
 
     # Start the SSH server daemon
