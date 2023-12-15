@@ -27,7 +27,8 @@
 #FROM artifactory.algol60.net/csm-docker/stable/docker.io/opensuse/leap:15.4 as base
 FROM opensuse/leap:15.4 as base
 
-RUN zypper install -y openssh wget
+# Add tools for remote access
+RUN zypper install -y openssh wget curl rpm squashfs-tools tar python3 py3-pip podman openssh
 
 # Apply security patches
 COPY zypper-refresh-patch-clean.sh /
