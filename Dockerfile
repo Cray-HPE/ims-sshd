@@ -28,7 +28,7 @@
 FROM opensuse/leap:15.4 as base
 
 # Add tools for remote access
-RUN zypper install -y openssh wget curl rpm squashfs-tools tar python3 py3-pip podman openssh
+RUN zypper install -y openssh wget squashfs tar python3 python3-pip podman vi
 
 # Apply security patches
 COPY zypper-refresh-patch-clean.sh /
@@ -38,9 +38,8 @@ RUN /zypper-refresh-patch-clean.sh && rm /zypper-refresh-patch-clean.sh
 RUN wget https://github.com/multiarch/qemu-user-static/releases/download/v7.2.0-1/qemu-aarch64-static && \
     mv ./qemu-aarch64-static /usr/bin/qemu-aarch64-static && chmod +x /usr/bin/qemu-aarch64-static
 
-COPY run_script.sh env_script.sh entrypoint.sh /
+COPY run_script.sh entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
 ENV SSHD_OPTIONS ""
 ENV IMAGE_ROOT_PARENT /mnt/image
 ENV CUSTOMIZATION_SCRIPT /run_script.sh
-ENV ENV_SCRIPT /env_script.sh

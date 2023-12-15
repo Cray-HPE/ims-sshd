@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Disabled concurrent Jenkins builds on same branch/commit
 - Added build timeout to avoid hung builds
 
+## [1.9.0] - 2023-11-30
+### Changed
+- CASMTRIAGE-6368 - fix setting env vars in ssh so sftp still works."
+
 ## [1.8.3] - 2023-07-11
 ### Changed
 - CASMCMS-8708 - fix build to include metadata needed for nightly rebuilds.
