@@ -28,7 +28,7 @@
 FROM opensuse/leap:15.4 as base
 
 # Add tools for remote access
-RUN zypper install -y openssh wget curl rpm squashfs-tools tar python3 py3-pip podman openssh
+RUN zypper install -y openssh wget squashfs tar python3 python3-pip podman vi
 
 # Apply security patches
 COPY zypper-refresh-patch-clean.sh /
