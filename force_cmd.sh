@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2023-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,13 +22,11 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-
-# See if this removed the double echo...
-set -x
-
-# This script is used by the ssh_config when forwarding ssh calls to a remote
-# build node.
 if [[ -z "$SSH_ORIGINAL_COMMAND" ]]; then
-    ssh root@${REMOTE_BUILD_NODE} "podman exec -it ims-${IMS_JOB_ID} /bin/sh"
+    ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p 2022 root@${REMOTE_BUILD_NODE}
+# NOTE: this does not currently work for sftp - try somthing like below to make it work?
+#elif [[ "$SSH_ORIGINAL_COMMAND" == "internal-sftp" ]]; then
+#    sftp -P 2022 root@${REMOTE_BUILD_NODE}
 else
-    ssh root@${REMOTE_BUILD_NODE} "podman exec ims-${IMS_JOB_ID} /bin/sh -c '$SSH_ORIGINAL_COMMAND'"
+    ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p 2022 root@${REMOTE_BUILD_NODE} $SSH_ORIGINAL_COMMAND
+fi

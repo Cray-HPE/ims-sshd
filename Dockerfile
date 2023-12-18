@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2018-2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2018-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -38,7 +38,7 @@ RUN /zypper-refresh-patch-clean.sh && rm /zypper-refresh-patch-clean.sh
 RUN wget https://github.com/multiarch/qemu-user-static/releases/download/v7.2.0-1/qemu-aarch64-static && \
     mv ./qemu-aarch64-static /usr/bin/qemu-aarch64-static && chmod +x /usr/bin/qemu-aarch64-static
 
-COPY run_script.sh entrypoint.sh /
+COPY run_script.sh force_cmd.sh entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
 ENV SSHD_OPTIONS ""
 ENV IMAGE_ROOT_PARENT /mnt/image
