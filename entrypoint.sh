@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2018-2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2018-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -75,15 +75,41 @@ function wait_for_ready {
     done
 }
 
+function wait_for_local_complete {
+    until [ -f "$SIGNAL_FILE_COMPLETE" ] || [ -f "$SIGNAL_FILE_FAILED" ]
+    do
+        sleep 5;
+    done
+}
+
+function wait_for_remote_complete {
+    # Loop forever until the user is done
+    while [ true ]
+    do
+        # Look for the exiting flag in the remote job
+        ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman cp ims-${IMS_JOB_ID}:/mnt/image/remote_exiting /tmp/ims_${IMS_JOB_ID}"
+        rc=$?
+        if [ "$rc" -eq "0" ]; then
+            # a return value of 0 indicates file is present - remote complete
+            return 0
+        fi
+
+        sleep 5;
+    done
+}
+
 function wait_for_complete {
 
     echo "To mark this shell as successful, touch the file \"$SIGNAL_FILE_COMPLETE\"."
     echo "To mark this shell as failed, touch the file \"$SIGNAL_FILE_FAILED\"."
     echo "Waiting for User to mark this shell as either successful or failed."
-    until [ -f "$SIGNAL_FILE_COMPLETE" ] || [ -f "$SIGNAL_FILE_FAILED" ]
-    do
-        sleep 5;
-    done
+
+    # If this is a remote build, we need to check the remote job for completion
+    if [[ -n "${REMOTE_BUILD_NODE}" ]]; then
+        wait_for_remote_complete
+    else
+        wait_for_local_complete
+    fi
 
     if [ -f "$SIGNAL_FILE_FAILED" ]
     then
@@ -122,7 +148,14 @@ function run_user_shell {
 
     # Set up forwarding to remote node if needed
     if [[ -n "${REMOTE_BUILD_NODE}" ]]; then
-        echo "ForceCommand /force_script.sh" >> "$SSHD_CONFIG_FILE"
+        # add the command to forward ssh connections to the remote node
+        echo "ForceCommand /force_cmd.sh" >> "$SSHD_CONFIG_FILE"
+
+        # prepare the ssh keys to access the remote node
+        mkdir -p ~/.ssh
+        cp /etc/cray/remote-keys/id_ecdsa ~/.ssh
+        chmod 600 ~/.ssh/id_ecdsa
+        ssh-keygen -y -f ~/.ssh/id_ecdsa > ~/.ssh/id_ecdsa.pub
     fi
 
     # Setup SSH jail
@@ -131,10 +164,16 @@ function run_user_shell {
         chmod 755 "$IMAGE_ROOT_PARENT"
         chown root:root "$IMAGE_ROOT_PARENT"
         chown root:root "$IMAGE_ROOT_PARENT/image-root"
-        echo "Match User root" >> "$SSHD_CONFIG_FILE"
-        echo "ChrootDirectory $IMAGE_ROOT_PARENT/image-root" >> "$SSHD_CONFIG_FILE"
-        SIGNAL_FILE_COMPLETE=$IMAGE_ROOT_PARENT/image-root/tmp/complete
-        SIGNAL_FILE_FAILED=$IMAGE_ROOT_PARENT/image-root/tmp/failed
+
+        # if this is a remote job, chrootDir is set up on remote config
+        if [[ -z "${REMOTE_BUILD_NODE}" ]]; then
+            echo "Match User root" >> "$SSHD_CONFIG_FILE"
+            echo "ChrootDirectory $IMAGE_ROOT_PARENT/image-root" >> "$SSHD_CONFIG_FILE"
+
+            # If this is not a remote job, change location of complete files
+            SIGNAL_FILE_COMPLETE=$IMAGE_ROOT_PARENT/image-root/tmp/complete
+            SIGNAL_FILE_FAILED=$IMAGE_ROOT_PARENT/image-root/tmp/failed
+        fi
     fi
 
     # If setting up for dkms permissions, do that now
@@ -207,8 +246,66 @@ function run_user_shell {
     # Enter wait loop for $SIGNAL_FILE_COMPLETE to show up
     wait_for_complete
 
+    # If this is a remote customize build, we need to pull the results back
+    # from the remote node.
+    if [[ -n "${REMOTE_BUILD_NODE}" ]]; then
+        fetch_remote_artifacts
+    fi
+
     # Let the buildenv-sidecar container know that we're exiting
     signal_exiting
+}
+
+function clean_remote_node {
+    # delete artifacts off of remote host
+    # NOTE: need to prune the anonymous volume explicitly to free up the space
+    ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "rm -rf /tmp/ims_${IMS_JOB_ID}/"
+    ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman rm ims-${IMS_JOB_ID}"
+    ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman rmi ims-remote-${IMS_JOB_ID}:1.0.0"
+    ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman volume prune -f"
+}
+
+function fetch_remote_artifacts {
+    # check the results of the build
+    ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman cp ims-${IMS_JOB_ID}:/mnt/image/complete /tmp/ims_${IMS_JOB_ID}/"
+    rc=$?
+    if [ "$rc" -ne "0" ]; then
+        # Failed rc indicates file not present
+        echo "ERROR: Error reported from customize job."
+
+        # make sure the remote node artifacts are cleaned up
+        clean_remote_node
+
+        # signal we are done
+        touch $PARAMETER_FILE_BUILD_FAILED
+    else
+        # copy image files from pod to remote machine
+
+        ## TODO - is there a way to copy from the container directly to the pod without the intermediate
+        ##  stop in /tmp on the remote build node??? Would save space but I don't know how...
+
+        ## NOTE - need to copy to /tmp - VERY limited for space...
+        ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman cp ims-${IMS_JOB_ID}:/mnt/image/transfer.sqsh /tmp/ims_${IMS_JOB_ID}/"
+
+        # copy image files from remote machine to job pod
+        scp -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE}:/tmp/ims_${IMS_JOB_ID}/* ${IMAGE_ROOT_PARENT}
+
+        # NOTE - need to look at prepare step to see where these came from:
+        #    /mnt/image/image-root/cray/*
+        #    /mnt/image/image-root/resolve.conf
+        # ??? - do they need to be added to the squashfs file? Added some other way?
+
+        # unpack squashfs
+        mkdir -p ${IMAGE_ROOT_PARENT}/
+        unsquashfs -f -d ${IMAGE_ROOT_PARENT}/image-root ${IMAGE_ROOT_PARENT}/transfer.sqsh
+        rm ${IMAGE_ROOT_PARENT}/transfer.sqsh
+
+        # make sure the remote node artifacts are cleaned up
+        clean_remote_node
+
+        # signal we are done
+        touch $SIGNAL_FILE_COMPLETE
+    fi
 }
 
 function should_run_user_shell {
