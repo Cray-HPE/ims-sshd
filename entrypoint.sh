@@ -181,20 +181,24 @@ function run_user_shell {
     local is_dkms=$(echo $JOB_ENABLE_DKMS | tr '[:upper:]' '[:lower:]')
     echo "is_dkms=$is_dkms"
     if [ "$is_dkms" = "true" ]; then
-        if mount -t sysfs /sysfs /mnt/image/image-root/sys; then
-            echo "Mounted /sys"
+        if [[ -n "${REMOTE_BUILD_NODE}" ]]; then
+            echo " dkms mounts not set in sshd pod for remote jobs"
         else
-            echo "Failed to mount /sys"
-        fi
-        if mount -t proc /proc /mnt/image/image-root/proc; then
-            echo "Mounted /proc"
-        else
-            echo "Failed to mount /proc"
-        fi
-        if mount -t devtmpfs /devtmpfs /mnt/image/image-root/dev; then
-            echo "Mounted /dev"
-        else
-            echo "Failed to mount /dev"
+            if mount -t sysfs /sysfs /mnt/image/image-root/sys; then
+                echo "Mounted /sys"
+            else
+                echo "Failed to mount /sys"
+            fi
+            if mount -t proc /proc /mnt/image/image-root/proc; then
+                echo "Mounted /proc"
+            else
+                echo "Failed to mount /proc"
+            fi
+            if mount -t devtmpfs /devtmpfs /mnt/image/image-root/dev; then
+                echo "Mounted /dev"
+            else
+                echo "Failed to mount /dev"
+            fi
         fi
     else
         echo "DKMS not enabled"
@@ -277,9 +281,11 @@ function fetch_remote_artifacts {
         clean_remote_node
 
         # signal we are done
-        touch $PARAMETER_FILE_BUILD_FAILED
+        echo "Touching failed flag: $SIGNAL_FILE_FAILED"
+        touch $SIGNAL_FILE_FAILED
     else
         # copy image files from pod to remote machine
+        echo "Remote job succeeded"
 
         ## TODO - is there a way to copy from the container directly to the pod without the intermediate
         ##  stop in /tmp on the remote build node??? Would save space but I don't know how...
