@@ -42,9 +42,8 @@ lint:
 		./cms_meta_tools/scripts/runLint.sh
 
 image:
-		# NOTE: add ',linux/arm64' to the platform arg to also build arm64 image
 		docker buildx create --use
-		docker buildx build --push --platform=linux/amd64 ${DOCKER_ARGS} --tag '${DOCKER_NAME}:${DOCKER_VERSION}' .
+		docker buildx build --push --platform=linux/amd64,linux/arm64 ${DOCKER_ARGS} --tag '${DOCKER_NAME}:${DOCKER_VERSION}' .
 
 image_local:
 		docker buildx create --use
