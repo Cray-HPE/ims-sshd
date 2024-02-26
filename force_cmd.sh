@@ -22,11 +22,17 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
+# Set up the remote port varible
+IMAGE_ROOT_PARENT=${1:-/mnt/image}
+REMOTE_PORT_FILE=$IMAGE_ROOT_PARENT/remote_port
+REMOTE_PORT=$(cat ${REMOTE_PORT_FILE})
+
 if [[ -z "$SSH_ORIGINAL_COMMAND" ]]; then
-    ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p 2022 root@${REMOTE_BUILD_NODE}
+    ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p ${REMOTE_PORT} root@${REMOTE_BUILD_NODE}
 # NOTE: this does not currently work for sftp - try somthing like below to make it work?
 #elif [[ "$SSH_ORIGINAL_COMMAND" == "internal-sftp" ]]; then
 #    sftp -P 2022 root@${REMOTE_BUILD_NODE}
 else
-    ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p 2022 root@${REMOTE_BUILD_NODE} $SSH_ORIGINAL_COMMAND
+    ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p ${REMOTE_PORT} root@${REMOTE_BUILD_NODE} $SSH_ORIGINAL_COMMAND
 fi

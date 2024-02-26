@@ -64,6 +64,9 @@ SIGNAL_FILE_COMPLETE=$IMAGE_ROOT_PARENT/complete
 SIGNAL_FILE_EXITING=$IMAGE_ROOT_PARENT/exiting
 SIGNAL_FILE_FAILED=$IMAGE_ROOT_PARENT/failed
 
+REMOTE_PORT_FILE=$IMAGE_ROOT_PARENT/remote_port
+REMOTE_PORT=""
+
 PARAMETER_FILE_BUILD_FAILED=$IMAGE_ROOT_PARENT/build_failed
 
 function wait_for_ready {
@@ -148,6 +151,17 @@ function run_user_shell {
 
     # Set up forwarding to remote node if needed
     if [[ -n "${REMOTE_BUILD_NODE}" ]]; then
+        # if the remote port file does not exist, bail
+        if [ ! -f ${REMOTE_PORT_FILE} ]; then
+            echo "ERROR: file with remote port missing - can not proceed with remote job!"
+            touch "$SIGNAL_FILE_FAILED"
+            signal_exiting
+            return
+        fi
+
+        # get remote port file into env var REMOTE_PORT
+        REMOTE_PORT=$(cat ${REMOTE_PORT_FILE})
+
         # add the command to forward ssh connections to the remote node
         echo "ForceCommand /force_cmd.sh" >> "$SSHD_CONFIG_FILE"
 
@@ -285,7 +299,7 @@ function fetch_remote_artifacts {
         touch $SIGNAL_FILE_FAILED
     else
         # copy image files from pod to remote machine
-        echo "Remote job succeeded"
+        echo "Remote job succeeded - fetching remote artifacts..."
 
         ## TODO - is there a way to copy from the container directly to the pod without the intermediate
         ##  stop in /tmp on the remote build node??? Would save space but I don't know how...
