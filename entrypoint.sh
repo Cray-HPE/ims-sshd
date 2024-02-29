@@ -310,11 +310,6 @@ function fetch_remote_artifacts {
         # copy image files from remote machine to job pod
         scp -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE}:/tmp/ims_${IMS_JOB_ID}/* ${IMAGE_ROOT_PARENT}
 
-        # NOTE - need to look at prepare step to see where these came from:
-        #    /mnt/image/image-root/cray/*
-        #    /mnt/image/image-root/resolve.conf
-        # ??? - do they need to be added to the squashfs file? Added some other way?
-
         # unpack squashfs
         mkdir -p ${IMAGE_ROOT_PARENT}/
         unsquashfs -f -d ${IMAGE_ROOT_PARENT}/image-root ${IMAGE_ROOT_PARENT}/transfer.sqsh
