@@ -1,7 +1,8 @@
+#!/bin/bash
 #
 # MIT License
 #
-# (C) Copyright 2018-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2023-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,24 +23,16 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# Dockerfile for IMS sshd environment
-# NOTE - currently the algol version does not have arm64 platform - update this when it does
-#FROM artifactory.algol60.net/csm-docker/stable/docker.io/opensuse/leap:15.4 as base
-FROM opensuse/leap:15.4 as base
+# Set up the remote port varible
+IMAGE_ROOT_PARENT=${1:-/mnt/image}
+REMOTE_PORT_FILE=$IMAGE_ROOT_PARENT/remote_port
+REMOTE_PORT=$(cat ${REMOTE_PORT_FILE})
 
-# Add tools for remote access
-RUN zypper install -y openssh wget squashfs tar python3 python3-pip podman vi
-
-# Apply security patches
-COPY zypper-refresh-patch-clean.sh /
-RUN /zypper-refresh-patch-clean.sh && rm /zypper-refresh-patch-clean.sh
-
-# Install qemu-aarch64-static binary to handle arm64 emulation if needed
-RUN wget https://github.com/multiarch/qemu-user-static/releases/download/v7.2.0-1/qemu-aarch64-static && \
-    mv ./qemu-aarch64-static /usr/bin/qemu-aarch64-static && chmod +x /usr/bin/qemu-aarch64-static
-
-COPY run_script.sh force_cmd.sh entrypoint.sh /
-ENTRYPOINT ["/entrypoint.sh"]
-ENV SSHD_OPTIONS ""
-ENV IMAGE_ROOT_PARENT /mnt/image
-ENV CUSTOMIZATION_SCRIPT /run_script.sh
+if [[ -z "$SSH_ORIGINAL_COMMAND" ]]; then
+    ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p ${REMOTE_PORT} root@${REMOTE_BUILD_NODE}
+# NOTE: this does not currently work for sftp - try somthing like below to make it work?
+#elif [[ "$SSH_ORIGINAL_COMMAND" == "internal-sftp" ]]; then
+#    sftp -P 2022 root@${REMOTE_BUILD_NODE}
+else
+    ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p ${REMOTE_PORT} root@${REMOTE_BUILD_NODE} $SSH_ORIGINAL_COMMAND
+fi
