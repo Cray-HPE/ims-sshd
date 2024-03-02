@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CASMCMS-8818 - add support for ssh key injection.
 - CASMCMS-8897 - changes for aarch64 remote build.
 - CASMCMS-8895 - allow multiple concurrent remote customize jobs.
+- CASMCMS-8923 - better cleanup on unexpected exit.
 
 ### Changed
 - Disabled concurrent Jenkins builds on same branch/commit

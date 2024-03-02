@@ -162,6 +162,9 @@ function run_user_shell {
         # get remote port file into env var REMOTE_PORT
         REMOTE_PORT=$(cat ${REMOTE_PORT_FILE})
 
+        # set up cleanup in case this exits unexpectedly
+        trap clean_exit SIGTERM SIGINT
+
         # add the command to forward ssh connections to the remote node
         echo "ForceCommand /force_cmd.sh" >> "$SSHD_CONFIG_FILE"
 
@@ -272,6 +275,19 @@ function run_user_shell {
 
     # Let the buildenv-sidecar container know that we're exiting
     signal_exiting
+}
+
+function clean_exit {
+    # handle a signal terminating the process
+    echo "Abrubt exiting..."
+
+    # remote container should still be running - need to kill it
+    ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman stop ims-${IMS_JOB_ID}"
+
+    # now that container has stopped, we can proceed with the normal cleanup
+    clean_remote_node
+
+    exit 1
 }
 
 function clean_remote_node {
