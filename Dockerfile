@@ -23,9 +23,7 @@
 #
 
 # Dockerfile for IMS sshd environment
-# NOTE - currently the algol version does not have arm64 platform - update this when it does
-#FROM artifactory.algol60.net/csm-docker/stable/docker.io/opensuse/leap:15.4 as base
-FROM opensuse/leap:15.4 as base
+FROM artifactory.algol60.net/csm-docker/stable/docker.io/opensuse/leap:15.6 as base
 
 # Add tools for remote access
 RUN zypper install -y openssh wget squashfs tar python3 python3-pip podman vi
