@@ -194,7 +194,7 @@ function run_user_shell {
     fi
 
     # If setting up for dkms permissions, do that now
-    echo "JOB_ENABLE_DMKS: $JOB_ENABLE_DKMS"
+    echo "JOB_ENABLE_DKMS: $JOB_ENABLE_DKMS"
     local is_dkms=$(echo $JOB_ENABLE_DKMS | tr '[:upper:]' '[:lower:]')
     echo "is_dkms=$is_dkms"
     if [ "$is_dkms" = "true" ]; then
