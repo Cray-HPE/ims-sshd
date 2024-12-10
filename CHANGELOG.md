@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.0] - 2024-12-10
+## Fixed
+- CASMCMS-9226 - fix mis-spelling.
+
 ## [1.11.0] - 2024-09-13
 ### Dependencies
 - Update from OpenSUSE 15.4 to 15.6
