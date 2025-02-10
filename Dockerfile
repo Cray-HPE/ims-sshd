@@ -32,9 +32,6 @@ RUN groupadd --gid 65534 nobody || true && \
 # Add privilege into sudoers file
 RUN echo 'nobody ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 
-# Switch the user to non-root
-USER 65534:65534
-
 # Add tools for remote access
 RUN zypper install -y openssh wget squashfs tar python3 python3-pip podman vi
 
@@ -47,6 +44,10 @@ RUN wget https://github.com/multiarch/qemu-user-static/releases/download/v7.2.0-
     mv ./qemu-aarch64-static /usr/bin/qemu-aarch64-static && chmod +x /usr/bin/qemu-aarch64-static
 
 COPY run_script.sh force_cmd.sh entrypoint.sh /
+
+# Switch the user to non-root
+USER 65534:65534
+
 ENTRYPOINT ["/entrypoint.sh"]
 ENV SSHD_OPTIONS ""
 ENV IMAGE_ROOT_PARENT /mnt/image
