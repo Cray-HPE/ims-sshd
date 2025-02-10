@@ -25,6 +25,15 @@
 # Dockerfile for IMS sshd environment
 FROM artifactory.algol60.net/csm-docker/stable/docker.io/opensuse/leap:15.6 as base
 
+# Create a user with UID 65534 and GID 65534 (nobody user)
+RUN useradd -u 65534 -g 65534 -ms /bin/bash nobody
+
+# Add privilege into sudoers file
+RUN echo 'nobody ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+
+# Switch the user to non-root
+USER 65534:65534
+
 # Add tools for remote access
 RUN zypper install -y openssh wget squashfs tar python3 python3-pip podman vi
 
