@@ -26,7 +26,8 @@
 FROM artifactory.algol60.net/csm-docker/stable/docker.io/opensuse/leap:15.6 as base
 
 # Create a user with UID 65534 and GID 65534 (nobody user)
-RUN useradd -u 65534 -g 65534 -ms /bin/bash nobody
+RUN groupadd --gid 65534 nobody || true && \
+    useradd -u 65534 -g 65534 -ms /bin/bash nobody
 
 # Add privilege into sudoers file
 RUN echo 'nobody ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
