@@ -149,6 +149,7 @@ function run_user_shell {
     #  - this must be before the 'Match' line in a jailed setup
     echo "SetEnv IMS_JOB_ID=$IMS_JOB_ID IMS_ARCH=$BUILD_ARCH IMS_DKMS_ENABLED=$JOB_ENABLE_DKMS REMOTE_BUILD_NODE=$REMOTE_BUILD_NODE" >> "$SSHD_CONFIG_FILE"
 
+    trap clean_exit SIGTERM SIGINT
     # Set up forwarding to remote node if needed
     if [[ -n "${REMOTE_BUILD_NODE}" ]]; then
         # if the remote port file does not exist, bail
@@ -279,15 +280,24 @@ function run_user_shell {
 
 function clean_exit {
     # handle a signal terminating the process
-    echo "Abrubt exiting..."
+    # signal we are done
+    echo "Touching failed flag: $SIGNAL_FILE_FAILED"
+    touch $SIGNAL_FILE_FAILED
+    signal_exiting
+    echo "Abrupt exiting..."
+    if [[ -n "${REMOTE_BUILD_NODE}" ]]; then
+      # remote container should still be running - need to kill it
+      ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman stop ims-${IMS_JOB_ID}"
 
-    # remote container should still be running - need to kill it
-    ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman stop ims-${IMS_JOB_ID}"
+      # now that container has stopped, we can proceed with the normal cleanup
+      clean_remote_node
 
-    # now that container has stopped, we can proceed with the normal cleanup
-    clean_remote_node
-
-    exit 1
+      exit 1
+    else
+      # local job - just exit
+      echo "Exiting local job..."
+      exit 1
+    fi
 }
 
 function clean_remote_node {
