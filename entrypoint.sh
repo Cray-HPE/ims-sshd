@@ -172,7 +172,7 @@ function run_user_shell {
         ssh-keygen -y -f ~/.ssh/id_ecdsa > ~/.ssh/id_ecdsa.pub
 
         # set up port forwarding to the remote node
-        REMOTE_NODE_IP=$(getent hosts x3000c0s19b1n0 | awk '{ print $1 }')
+        REMOTE_NODE_IP=$(getent hosts ${REMOTE_BUILD_NODE} | awk '{ print $1 }')
         iptables -t nat -A PREROUTING -p tcp --dport 22 -j DNAT --to-destination "${REMOTE_NODE_IP}":"${REMOTE_PORT}"
         iptables -t nat -A POSTROUTING -j MASQUERADE
     fi
