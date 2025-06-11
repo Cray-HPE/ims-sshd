@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2018-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2018-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -165,14 +165,16 @@ function run_user_shell {
         # set up cleanup in case this exits unexpectedly
         trap clean_exit SIGTERM SIGINT
 
-        # add the command to forward ssh connections to the remote node
-        echo "ForceCommand /force_cmd.sh" >> "$SSHD_CONFIG_FILE"
-
         # prepare the ssh keys to access the remote node
         mkdir -p ~/.ssh
         cp /etc/cray/remote-keys/id_ecdsa ~/.ssh
         chmod 600 ~/.ssh/id_ecdsa
         ssh-keygen -y -f ~/.ssh/id_ecdsa > ~/.ssh/id_ecdsa.pub
+
+        # set up port forwarding to the remote node
+        REMOTE_NODE_IP=$(getent hosts ${REMOTE_BUILD_NODE} | awk '{ print $1 }')
+        iptables -t nat -A PREROUTING -p tcp --dport 22 -j DNAT --to-destination "${REMOTE_NODE_IP}":"${REMOTE_PORT}"
+        iptables -t nat -A POSTROUTING -j MASQUERADE
     fi
 
     # Setup SSH jail
@@ -225,7 +227,7 @@ function run_user_shell {
     echo "Checking build architecture: $BUILD_ARCH"
     if [ "$BUILD_ARCH" == "aarch64" ]; then
         echo "Build architecture is aarch64"
-        # Regiser qemu-aarch64-static to act as an arm interpreter for arm builds 
+        # Register qemu-aarch64-static to act as an arm interpreter for arm builds 
         if [ ! -d /proc/sys/fs/binfmt_misc ] ; then
             echo "- binfmt_misc does not appear to be loaded or isn't built in."
             echo "  Trying to load it..."
@@ -252,10 +254,14 @@ function run_user_shell {
         fi
     fi
 
-    # Start the SSH server daemon
-    ssh-keygen -A
+    # Make sure ownership of dir is correct
     chown -R root:root /etc/cray/ims
-    /usr/sbin/sshd $SSHD_OPTIONS
+
+    # Start the SSH server daemon or set up port forwarding
+    if [[ -z "${REMOTE_BUILD_NODE}" ]]; then
+        ssh-keygen -A
+        /usr/sbin/sshd $SSHD_OPTIONS
+    fi
 
     # Perform any other bootstrapping tasks here or run a script
     # located in the build environment
@@ -279,7 +285,7 @@ function run_user_shell {
 
 function clean_exit {
     # handle a signal terminating the process
-    echo "Abrubt exiting..."
+    echo "Abrupt exiting..."
 
     # remote container should still be running - need to kill it
     ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman stop ims-${IMS_JOB_ID}"
