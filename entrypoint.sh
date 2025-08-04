@@ -114,6 +114,7 @@ function wait_for_complete {
         wait_for_local_complete
     fi
 
+    # check the results of the run now that the user shell has exited
     if [ -f "$SIGNAL_FILE_FAILED" ]
     then
         echo "$SIGNAL_FILE_FAILED exists; Shell was marked failed."
@@ -320,22 +321,10 @@ function fetch_remote_artifacts {
         echo "Touching failed flag: $SIGNAL_FILE_FAILED"
         touch $SIGNAL_FILE_FAILED
     else
-        # copy image files from pod to remote machine
         echo "Remote job succeeded - fetching remote artifacts..."
 
-        ## TODO - is there a way to copy from the container directly to the pod without the intermediate
-        ##  stop in /tmp on the remote build node??? Would save space but I don't know how...
-
-        ## NOTE - need to copy to /tmp - VERY limited for space...
-        ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman cp ims-${IMS_JOB_ID}:/mnt/image/transfer.sqsh /tmp/ims_${IMS_JOB_ID}/"
-
         # copy image files from remote machine to job pod
-        scp -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE}:/tmp/ims_${IMS_JOB_ID}/* ${IMAGE_ROOT_PARENT}
-
-        # unpack squashfs
-        mkdir -p ${IMAGE_ROOT_PARENT}/
-        unsquashfs -f -d ${IMAGE_ROOT_PARENT}/image-root ${IMAGE_ROOT_PARENT}/transfer.sqsh
-        rm ${IMAGE_ROOT_PARENT}/transfer.sqsh
+        scp -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE}:/tmp/ims_${IMS_JOB_ID}/image/* ${IMAGE_ROOT_PARENT}
 
         # make sure the remote node artifacts are cleaned up
         clean_remote_node
