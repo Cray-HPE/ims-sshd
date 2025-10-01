@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.14.0] - 2025-10-01
+## Changed
+- CASMCMS-8904 - optimize remote node builds.
+
 ## [1.13.0] - 2025-06-10
 ## Changed
 - CASMCMS-8939 - better port forwarding for remote jobs.
