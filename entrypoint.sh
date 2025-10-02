@@ -96,7 +96,7 @@ function wait_for_remote_complete {
     do
         # Look for the exiting flag in the remote job
         echo "Checking for remote exiting flag"
-        ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman cp ims-${IMS_JOB_ID}:${SIGNAL_FILE_REMOTE_EXITING} /tmp/ims_${IMS_JOB_ID}"
+        ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman cp ims-${IMS_JOB_ID}:${SIGNAL_FILE_REMOTE_EXITING} /tmp/ims_${IMS_JOB_ID}">/dev/null 2>&1
         rc=$?
         echo "  RC: ${rc}"
         if [[ $rc -eq 0 ]]; then
@@ -106,7 +106,7 @@ function wait_for_remote_complete {
 
         # Look for the error flag in the remote job
         echo "Checking for remote error flag"
-        ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman cp ims-${IMS_JOB_ID}:${SIGNAL_FILE_REMOTE_ERROR} /tmp/ims_${IMS_JOB_ID}"
+        ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman cp ims-${IMS_JOB_ID}:${SIGNAL_FILE_REMOTE_ERROR} /tmp/ims_${IMS_JOB_ID}">/dev/null 2>&1
         rc=$?
         echo "  RC: ${rc}"
         if [[ $rc -eq 0 ]]; then
@@ -117,9 +117,8 @@ function wait_for_remote_complete {
         fi
 
         # make sure the remote job is still running
-        #>/dev/null 2>&1
         echo "Checking if remote job is still running"
-        ssh -o StrictHostKeyChecking=no "root@${REMOTE_BUILD_NODE}" "podman exec ims-${IMS_JOB_ID} echo heartbeat"
+        ssh -o StrictHostKeyChecking=no "root@${REMOTE_BUILD_NODE}" "podman exec ims-${IMS_JOB_ID} echo heartbeat">/dev/null 2>&1
         rc=$?
         echo "  RC: ${rc}"
         # a return value of 0 indicates the container is running
