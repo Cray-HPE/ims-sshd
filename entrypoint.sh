@@ -90,8 +90,10 @@ function wait_for_remote_complete {
     while [ true ]
     do
         # Look for the exiting flag in the remote job
-        ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman cp ims-${IMS_JOB_ID}:/mnt/image/remote_exiting /tmp/ims_${IMS_JOB_ID}" >/dev/null 2>&1
+        echo "Checking for remote exiting flag"
+        ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman cp ims-${IMS_JOB_ID}:/mnt/image/remote_exiting /tmp/ims_${IMS_JOB_ID}"
         rc=$?
+        echo "  RC: ${rc}"
         if [[ $rc -eq 0 ]]; then
             # a return value of 0 indicates file is present - remote complete
             return 0
@@ -100,8 +102,11 @@ function wait_for_remote_complete {
         ## TODO - add something that accounts for a temporary network interruption
 
         # make sure the remote job is still running
-        ssh -o StrictHostKeyChecking=no "root@${REMOTE_BUILD_NODE}" "podman ps -q --filter name=ims-${IMS_JOB_ID}" >/dev/null 2>&1
+        #>/dev/null 2>&1
+        echo "Checking if remote job is still running"
+        ssh -o StrictHostKeyChecking=no "root@${REMOTE_BUILD_NODE}" "podman ps -q --filter name=ims-${IMS_JOB_ID}"
         rc=$?
+        echo "  RC: ${rc}"
         # a return value of 0 indicates the container is running
         if [[ $rc -ne 0 ]]; then
             # Since the remote container is no longer running but there is no remote_exiting flag
