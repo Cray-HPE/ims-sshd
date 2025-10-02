@@ -281,7 +281,6 @@ function run_user_shell {
     # Perform any other bootstrapping tasks here or run a script
     # located in the build environment
     if [[ ! -z ${CUSTOMIZATION_SCRIPT} ]]; then
-    then
         . ${CUSTOMIZATION_SCRIPT}
     fi
 
