@@ -64,6 +64,10 @@ SIGNAL_FILE_COMPLETE=$IMAGE_ROOT_PARENT/complete
 SIGNAL_FILE_EXITING=$IMAGE_ROOT_PARENT/exiting
 SIGNAL_FILE_FAILED=$IMAGE_ROOT_PARENT/failed
 
+# NOTE: these are locations within the remote container
+SIGNAL_FILE_REMOTE_EXITING=/mnt/image/remote_exiting
+SIGNAL_FILE_REMOTE_ERROR=/mnt/image/remote_error
+
 REMOTE_PORT_FILE=$IMAGE_ROOT_PARENT/remote_port
 REMOTE_PORT=""
 
@@ -87,11 +91,12 @@ function wait_for_local_complete {
 
 function wait_for_remote_complete {
     # Loop forever until the user is done
+    HEARTBEAT_ERROR_COUNT=0
     while [ true ]
     do
         # Look for the exiting flag in the remote job
         echo "Checking for remote exiting flag"
-        ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman cp ims-${IMS_JOB_ID}:/mnt/image/remote_exiting /tmp/ims_${IMS_JOB_ID}"
+        ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman cp ims-${IMS_JOB_ID}:${SIGNAL_FILE_REMOTE_EXITING} /tmp/ims_${IMS_JOB_ID}"
         rc=$?
         echo "  RC: ${rc}"
         if [[ $rc -eq 0 ]]; then
@@ -101,7 +106,7 @@ function wait_for_remote_complete {
 
         # Look for the error flag in the remote job
         echo "Checking for remote error flag"
-        ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman cp ims-${IMS_JOB_ID}:/mnt/image/remote_error /tmp/ims_${IMS_JOB_ID}"
+        ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman cp ims-${IMS_JOB_ID}:${SIGNAL_FILE_REMOTE_ERROR} /tmp/ims_${IMS_JOB_ID}"
         rc=$?
         echo "  RC: ${rc}"
         if [[ $rc -eq 0 ]]; then
@@ -111,21 +116,28 @@ function wait_for_remote_complete {
             return 0
         fi
 
-        ## TODO - add something that accounts for a temporary network interruption
-
         # make sure the remote job is still running
         #>/dev/null 2>&1
         echo "Checking if remote job is still running"
-        ssh -o StrictHostKeyChecking=no "root@${REMOTE_BUILD_NODE}" "podman ps -q --filter name=ims-${IMS_JOB_ID}"
+        ssh -o StrictHostKeyChecking=no "root@${REMOTE_BUILD_NODE}" "podman exec ims-${IMS_JOB_ID} echo heartbeat"
         rc=$?
         echo "  RC: ${rc}"
         # a return value of 0 indicates the container is running
         if [[ $rc -ne 0 ]]; then
-            # Since the remote container is no longer running but there is no remote_exiting flag
-            # present something went wrong. Mark as failed and exit.
-            echo "Remote job is no longer running - exiting wait loop"
-            touch "${SIGNAL_FILE_FAILED}"
-            return 0
+            # Heartbeat failed - not sure if this is a pod failure or temporary network issue
+            if [[ ${HEARTBEAT_ERROR_COUNT} -ge 24 ]]; then
+                # After 24 consecutive errors (2 minutes) assume the remote job is no longer running
+                echo "Remote job is no longer running - exiting wait loop"
+                touch "${SIGNAL_FILE_FAILED}"
+                return 0
+            fi
+
+            # Increment error count and try again
+            HEARTBEAT_ERROR_COUNT=$((HEARTBEAT_ERROR_COUNT+1))
+            echo "Remote container heartbeat failed - error count: ${HEARTBEAT_ERROR_COUNT}"
+        else
+            # Heartbeat succeeded - reset error count
+            HEARTBEAT_ERROR_COUNT=0
         fi
 
         sleep 5;
