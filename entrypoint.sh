@@ -99,6 +99,18 @@ function wait_for_remote_complete {
             return 0
         fi
 
+        # Look for the error flag in the remote job
+        echo "Checking for remote error flag"
+        ssh -o StrictHostKeyChecking=no root@${REMOTE_BUILD_NODE} "podman cp ims-${IMS_JOB_ID}:/mnt/image/remote_error /tmp/ims_${IMS_JOB_ID}"
+        rc=$?
+        echo "  RC: ${rc}"
+        if [[ $rc -eq 0 ]]; then
+            # a return value of 0 indicates file is present - remote complete
+            echo "Remote job reported an error - exiting wait loop"
+            touch "${SIGNAL_FILE_FAILED}"
+            return 0
+        fi
+
         ## TODO - add something that accounts for a temporary network interruption
 
         # make sure the remote job is still running
