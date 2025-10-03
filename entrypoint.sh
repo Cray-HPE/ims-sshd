@@ -93,6 +93,7 @@ function wait_for_local_complete {
 function wait_for_remote_complete {
     # Loop forever until the user is done
     HEARTBEAT_ERROR_COUNT=0
+    HEARTBEAT_ERROR_LIMIT=12
     while [ true ]
     do
         # Look for the exiting flag in the remote job
@@ -117,10 +118,11 @@ function wait_for_remote_complete {
         # a return value of 0 indicates the container is running
         if [[ $? -ne 0 ]]; then
             # Heartbeat failed - not sure if this is a pod failure or temporary network issue
-            if [[ ${HEARTBEAT_ERROR_COUNT} -ge 24 ]]; then
-                # After 24 consecutive errors (2 minutes) assume the remote job is no longer running
-                echo "Remote job is no longer running - exiting wait loop"
+            if [[ ${HEARTBEAT_ERROR_COUNT} -ge ${HEARTBEAT_ERROR_LIMIT} ]]; then
+                # After 12 consecutive errors (1 minute) assume the remote job is no longer running
+                echo "Remote job is no longer accessible after ${HEARTBEAT_ERROR_LIMIT} consecutive errors - exiting wait loop"
                 touch "${SIGNAL_FILE_FAILED}"
+                touch "${PARAMETER_FILE_POD_ERROR}"
                 return 1
             fi
 
