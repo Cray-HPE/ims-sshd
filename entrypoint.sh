@@ -199,7 +199,7 @@ function run_user_shell {
             echo "ERROR: file with remote port missing - can not proceed with remote job!"
             touch "${SIGNAL_FILE_FAILED}"
             signal_exiting
-            return
+            return 1
         fi
 
         # get remote port file into env var REMOTE_PORT
@@ -314,6 +314,7 @@ function run_user_shell {
 
     # Enter wait loop for $SIGNAL_FILE_COMPLETE to show up
     wait_for_complete
+    RC=$?
 
     # If this is a remote customize build, we need to pull the results back
     # from the remote node.
@@ -323,6 +324,9 @@ function run_user_shell {
 
     # Let the buildenv-sidecar container know that we're exiting
     signal_exiting
+
+    # pass along the return code from the wait_for_complete function
+    return $RC
 }
 
 function clean_exit {
@@ -405,5 +409,7 @@ function should_run_user_shell {
 
 # Do we need to present the user with a SSH shell?
 if should_run_user_shell; then
+  # a non-zero return code indicates the user shell failed
   run_user_shell
+  exit $?
 fi
