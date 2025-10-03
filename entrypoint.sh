@@ -72,6 +72,7 @@ REMOTE_PORT_FILE=$IMAGE_ROOT_PARENT/remote_port
 REMOTE_PORT=""
 
 PARAMETER_FILE_BUILD_FAILED=$IMAGE_ROOT_PARENT/build_failed
+PARAMETER_FILE_POD_ERROR=$IMAGE_ROOT_PARENT/pod_error
 
 function wait_for_ready {
     echo "Waiting for $SIGNAL_FILE_READY flag"
@@ -111,8 +112,9 @@ function wait_for_remote_complete {
         echo "  RC: ${rc}"
         if [[ $rc -eq 0 ]]; then
             # a return value of 0 indicates file is present - remote complete
-            echo "Remote job reported an error - exiting wait loop"
+            echo "Remote job reported a container error - exiting wait loop"
             touch "${SIGNAL_FILE_FAILED}"
+            touch "${PARAMETER_FILE_POD_ERROR}"
             return 1
         fi
 
