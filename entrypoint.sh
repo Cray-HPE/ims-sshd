@@ -113,7 +113,7 @@ function wait_for_remote_complete {
             # a return value of 0 indicates file is present - remote complete
             echo "Remote job reported an error - exiting wait loop"
             touch "${SIGNAL_FILE_FAILED}"
-            return 0
+            return 1
         fi
 
         # make sure the remote job is still running
@@ -128,7 +128,7 @@ function wait_for_remote_complete {
                 # After 24 consecutive errors (2 minutes) assume the remote job is no longer running
                 echo "Remote job is no longer running - exiting wait loop"
                 touch "${SIGNAL_FILE_FAILED}"
-                return 0
+                return 1
             fi
 
             # Increment error count and try again
@@ -150,8 +150,10 @@ function wait_for_complete {
     echo "Waiting for User to mark this shell as either successful or failed."
 
     # If this is a remote build, we need to check the remote job for completion
+    RC=0
     if [[ -n "${REMOTE_BUILD_NODE}" ]]; then
         wait_for_remote_complete
+        RC=$?
     else
         wait_for_local_complete
     fi
@@ -173,6 +175,7 @@ function wait_for_complete {
     fi
 
     echo "Exiting ssh environment"
+    return $RC
 }
 
 function signal_exiting {
@@ -315,6 +318,7 @@ function run_user_shell {
     # Enter wait loop for $SIGNAL_FILE_COMPLETE to show up
     wait_for_complete
     RC=$?
+    echo "Run user shell wait_for_complete returned RC: $RC"
 
     # If this is a remote customize build, we need to pull the results back
     # from the remote node.
@@ -411,5 +415,7 @@ function should_run_user_shell {
 if should_run_user_shell; then
   # a non-zero return code indicates the user shell failed
   run_user_shell
-  exit $?
+  RC=$?
+  echo "User shell exited with RC: $RC"
+  exit $RC
 fi
