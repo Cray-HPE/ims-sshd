@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.0] - 2025-10-13
+### Changed
+- CASMCMS-9560 - better checking for remote build node port availability.
+- CASMTRIAGE-8568 - better handling of remote build node container failures.
+
 ## [1.14.0] - 2025-10-01
 ## Changed
 - CASMCMS-8904 - optimize remote node builds.
