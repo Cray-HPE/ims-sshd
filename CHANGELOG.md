@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.1] - 2025-11-04
+### Fixed
+- CASMTRIAGE-8859 - error with remote build node error file locations.
+
 ## [1.15.0] - 2025-10-13
 ### Changed
 - CASMCMS-9560 - better checking for remote build node port availability.
