@@ -71,7 +71,7 @@ PARAMETER_FILE_BUILD_FAILED=$IMAGE_ROOT_PARENT/build_failed
 PARAMETER_FILE_POD_ERROR=$IMAGE_ROOT_PARENT/pod_error
 
 # NOTE: these are locations within the remote container
-SIGNAL_FILE_REMOTE_EXITING=/mnt/image/remote_exiting
+SIGNAL_FILE_REMOTE_EXITING=image/remote_exiting
 SIGNAL_FILE_REMOTE_ERROR=image/remote_error
 
 # Number of consecutive heartbeat failures before assuming remote job is no longer running
